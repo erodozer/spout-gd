@@ -76,8 +76,7 @@ jobs:
           ${{ env.project }}.gdextension
           README.md
       
-  release:
-    name: Release Library
+  package:
     needs: [build]
     runs-on: ubuntu-latest
     strategy:
@@ -101,12 +100,23 @@ jobs:
         cp artifacts/${{ env.project }}.gdextension release/addons/${{ env.project }}
         cp artifacts/README.md release/addons/${{env.project}}
     - name: save artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.project }}.${{ matrix.platform }}.${{ matrix.arch }}
         path: release
-    - name: push release
-      if: ${{ github.ref == 'refs/heads/main' }}
-      uses: ncipollo/release-action@v1
-      with:
-        artifacts: ${{ env.project }}.${{ matrix.platform }}.${{ matrix.arch }}
+        
+  release:
+    needs: [package]
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+      - name: load artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: ${{ env.project }}.*.*
+      - name: push release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: |
+            ${{ env.project }}.windows.x86_64
