@@ -74,6 +74,7 @@ jobs:
           out/${{ env.project }}.${{ matrix.platform }}.${{ matrix.target }}.dll
           Spout2/Binaries/x64/SpoutLibrary.dll
           ${{ env.project }}.gdextension
+          README.md
       
   release:
     name: Release Library
@@ -85,8 +86,6 @@ jobs:
           - platform: windows
             arch: x86_64
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
     - name: load artifacts
       uses: actions/download-artifact@v4
       with:
@@ -100,6 +99,7 @@ jobs:
         cp artifacts/out/${{ env.project }}.${{ matrix.platform }}.template_debug.dll release/addons/${{ env.project }}
         cp artifacts/Spout2/Binaries/x64/SpoutLibrary.dll release/addons/${{ env.project }}
         cp artifacts/${{ env.project }}.gdextension release/addons/${{ env.project }}
+        cp artifacts/README.md release/addons/${{env.project}}
     - name: save artifact
       uses: actions/upload-artifact@v3
       with:
