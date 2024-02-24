@@ -32,7 +32,7 @@ jobs:
       id: caches
       shell: bash
       run: |
-        echo "spout_version=$(git rev-parse HEAD:Spout2)"
+        echo "spout_version=$(git rev-parse HEAD:Spout2)" >> $GITHUB_OUTPUT
     - name: Cache Dependency Builds
       id: spout_cache
       uses: actions/cache@v4
