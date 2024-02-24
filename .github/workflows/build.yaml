@@ -76,7 +76,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: spout-gd.zip
-        path: artifact
+        path: release
     - name: push release
       if: ${{ github.ref == 'refs/heads/main' }}
       uses: ncipollo/release-action@v1
