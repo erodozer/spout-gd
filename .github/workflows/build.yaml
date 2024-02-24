@@ -1,14 +1,28 @@
 run-name: Build Spout-gd Extension
 on: push
+env:
+  project: spout_gd
 jobs:
   build:
-    name: Build library
-    runs-on: windows-latest
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        release: ['template_debug', 'template_release']
+        include:
+          - identifier: windows-debug
+            name: Windows Debug
+            runner: windows-latest
+            target: template_debug
+            platform: windows
+            arch: x86_64
+          - identifier: windows-release
+            name: Windows Release
+            runner: windows-latest
+            target: template_release
+            platform: windows
+            arch: x86_64
     env:
-      SCONS_CACHE: ${{ github.workspace }}/scons_cache/${{ matrix.release }}
+      SCONS_CACHE: ${{ github.workspace }}/scons_cache/${{ matrix.identifier }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -41,21 +55,26 @@ jobs:
       run: |
         cmake -DSKIP_INSTALL_ALL=OFF -DSKIP_INSTALL_HEADERS=OFF -DSKIP_INSTALL_LIBRARIES=OFF -DSPOUT_BUILD_LIBRARY=ON --fresh .
         cmake --build . --clean-first
-    - name: Build spout-gd extension
-      run: scons target=${{ matrix.release }}
+    - name: Build extension
+      run: scons target=${{ matrix.target }}
     - name: save artifact
       uses: actions/upload-artifact@v4
       with:
-        name: spout_gd-${{ matrix.release }}
+        name: ${{ env.project }}.${{ matrix.platform }}.${{ matrix.arch }}.${{ matrix.target }}
         path: |
-          out/spout_gd.windows.${{ matrix.release }}.dll
+          out/${{ env.project }}.${{ matrix.platform }}.${{ matrix.target }}.dll
           Spout2/Binaries/x64/SpoutLibrary.dll
-          spout_gd.gdextension
+          ${{ env.project }}.gdextension
       
   release:
     name: Release Library
     needs: [build]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - platform: windows
+            arch: x86_64
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -63,22 +82,22 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: artifacts
-        pattern: spout_gd-*
+        pattern: ${{ env.project }}.${{ matrix.platform }}.${{ matrix.arch }}.*
         merge-multiple: true      
     - name: prepare for packaging
       run: |
-        mkdir -p release/addons/spout-gd
-        cp artifacts/out/spout_gd.windows.template_release.dll release/addons/spout-gd
-        cp artifacts/out/spout_gd.windows.template_debug.dll release/addons/spout-gd
-        cp artifacts/Spout2/Binaries/x64/SpoutLibrary.dll release/addons/spout-gd
-        cp artifacts/spout_gd.gdextension release/addons/spout-gd
+        mkdir -p release/addons/${{ env.project }}
+        cp artifacts/out/${{ env.project }}.${{ matrix.platform }}.template_release.dll release/addons/${{ env.project }}
+        cp artifacts/out/${{ env.project }}.${{ matrix.platform }}.template_debug.dll release/addons/${{ env.project }}
+        cp artifacts/Spout2/Binaries/x64/SpoutLibrary.dll release/addons/${{ env.project }}
+        cp artifacts/${{ env.project }}.gdextension release/addons/${{ env.project }}
     - name: save artifact
       uses: actions/upload-artifact@v3
       with:
-        name: spout-gd.zip
+        name: ${{ env.project }}.${{ matrix.platform }}.${{ matrix.arch }}
         path: release
     - name: push release
       if: ${{ github.ref == 'refs/heads/main' }}
       uses: ncipollo/release-action@v1
       with:
-        artifacts: spout-gd.zip
+        artifacts: ${{ env.project }}.${{ matrix.platform }}.${{ matrix.arch }}
