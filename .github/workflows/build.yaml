@@ -24,7 +24,7 @@ jobs:
         key: ${{ steps.caches.outputs.cache_key }}
         path: |
           ${{ github.workspace }}/Spout2
-          ${{ github.workspace }}/godot-cpp
+          ${{ github.workspace }}/scons_cache
     - name: Install cmake
       uses: lukka/get-cmake@fix-issue-123
     - name: Install Python
@@ -41,6 +41,8 @@ jobs:
         cmake --build . --clean-first
     - name: Build spout-gd extension
       run: scons target=${{ matrix.release }}
+      env:
+        SCONS_CACHE: ${{ github.workspace }}/scons_cache
     - name: save artifact
       uses: actions/upload-artifact@v4
       with:
@@ -65,11 +67,10 @@ jobs:
         merge-multiple: true      
     - name: prepare for packaging
       run: |
-        ls artifacts
         mkdir release\addons\spout-gd
-        cp artifacts/spout_gd.windows.template_release.dll release\addons\spout-gd
-        cp artifacts/spout_gd.windows.template_debug.dll release\addons\spout-gd
-        cp artifacts/SpoutLibrary.dll release\addons\spout-gd
+        cp artifacts/out/spout_gd.windows.template_release.dll release\addons\spout-gd
+        cp artifacts/out/spout_gd.windows.template_debug.dll release\addons\spout-gd
+        cp artifacts/Spout2/Binaries/x64/SpoutLibrary.dll release\addons\spout-gd
         cp artifacts/spout_gd.gdextension release\addons\spout-gd
     - name: save artifact
       uses: actions/upload-artifact@v3
