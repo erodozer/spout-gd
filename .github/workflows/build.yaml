@@ -67,11 +67,11 @@ jobs:
         merge-multiple: true      
     - name: prepare for packaging
       run: |
-        mkdir release\addons\spout-gd
-        cp artifacts/out/spout_gd.windows.template_release.dll release\addons\spout-gd
-        cp artifacts/out/spout_gd.windows.template_debug.dll release\addons\spout-gd
-        cp artifacts/Spout2/Binaries/x64/SpoutLibrary.dll release\addons\spout-gd
-        cp artifacts/spout_gd.gdextension release\addons\spout-gd
+        mkdir -p release/addons/spout-gd
+        cp artifacts/out/spout_gd.windows.template_release.dll release/addons/spout-gd
+        cp artifacts/out/spout_gd.windows.template_debug.dll release/addons/spout-gd
+        cp artifacts/Spout2/Binaries/x64/SpoutLibrary.dll release/addons/spout-gd
+        cp artifacts/spout_gd.gdextension release/addons/spout-gd
     - name: save artifact
       uses: actions/upload-artifact@v3
       with:
