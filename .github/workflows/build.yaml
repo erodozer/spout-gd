@@ -42,9 +42,9 @@ jobs:
     - name: Build spout-gd extension
       run: scons target=${{ matrix.release }}
     - name: save artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: spout2_${{ matrix.release }}
+        name: spout_gd-${{ matrix.release }}
         path: |
           out/spout_gd.windows.${{ matrix.release }}.dll
           Spout2/Binaries/x64/SpoutLibrary.dll
@@ -53,7 +53,7 @@ jobs:
   release:
     name: Release Library
     needs: [build]
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -61,14 +61,16 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: artifacts
+        pattern: spout_gd-*
         merge-multiple: true      
     - name: prepare for packaging
       run: |
+        ls artifacts
         mkdir release\addons\spout-gd
-        copy artifacts/spout_gd.windows.template_release.dll release\addons\spout-gd
-        copy artifacts/spout_gd.windows.template_debug.dll release\addons\spout-gd
-        copy artifacts/SpoutLibrary.dll release\addons\spout-gd
-        copy artifacts/spout_gd.gdextension release\addons\spout-gd
+        cp artifacts/spout_gd.windows.template_release.dll release\addons\spout-gd
+        cp artifacts/spout_gd.windows.template_debug.dll release\addons\spout-gd
+        cp artifacts/SpoutLibrary.dll release\addons\spout-gd
+        cp artifacts/spout_gd.gdextension release\addons\spout-gd
     - name: save artifact
       uses: actions/upload-artifact@v3
       with:
