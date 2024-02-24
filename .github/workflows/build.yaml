@@ -12,17 +12,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'true'
-    - name: Check Spout version
+    - name: Check Cache versions
       id: caches
+      shell: bash
       run: |
-        "C:\Program Files\Git\bin\git.exe" rev-parse HEAD:Spout2
-        echo "spout_version=$("C:\Program Files\Git\bin\git.exe" rev-parse HEAD:Spout2)" >> $GITHUB_OUTPUT
-        echo "gdcpp_version=$("C:\Program Files\Git\bin\git.exe" rev-parse HEAD:godot-cpp)" >> $GITHUB_OUTPUT
-    - name: Cache Spout build
+        echo "cache_key=$(git rev-parse HEAD:Spout2):$(git rev-parse HEAD:godot-cpp)" >> $GITHUB_OUTPUT
+    - name: Cache Dependency Builds
       id: cache
       uses: actions/cache@v4
       with:
-        key: "${{ steps.caches.outputs.spout_version }}:${{steps.caches.outputs.gdcpp_version}}"
+        key: ${{ steps.caches.outputs.cache_key }}
         path: |
           ${{ github.workspace }}/Spout2
           ${{ github.workspace }}/godot-cpp
