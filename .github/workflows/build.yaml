@@ -4,6 +4,9 @@ jobs:
   build:
     name: Build library
     runs-on: windows-latest
+    strategy:
+      matrix:
+        release: ['template_debug', 'template_release']
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -11,7 +14,7 @@ jobs:
         submodules: 'true'
     - id: caches
       run: |
-        echo "spout_version=${git rev-parse HEAD:Spout2}" >> $GITHUB_OUTPUT
+        echo "spout_version=$(git rev-parse HEAD:Spout2)" >> $GITHUB_OUTPUT
     - name: Cache Spout build
       id: cache
       uses: actions/cache@v4
@@ -32,16 +35,36 @@ jobs:
       run: |
         cmake -DSKIP_INSTALL_ALL=OFF -DSKIP_INSTALL_HEADERS=OFF -DSKIP_INSTALL_LIBRARIES=OFF -DSPOUT_BUILD_LIBRARY=ON --fresh .
         cmake --build . --clean-first
-    - name: Build spout-gd extension (Debug)
-      run: scons target=template_debug
-    - name: Build spout-gd extension (Release)
-      run: scons target=template_release
+    - name: Build spout-gd extension
+      run: scons target=${{ matrix.release }}
+    - name: save artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: spout_gd.windows.${{ matrix.release }}.dll
+        path: out/spout_gd.windows.${{ matrix.release }}.dll
+    - name: save artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: SpoutLibrary.dll
+        path: Spout2/Binaries/x64/SpoutLibrary.dll
+      
+  release:
+    name: Release Library
+    runs-on: windows-latest
+    if: ${{ github.ref == 'refs/heads/main' }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: save artifact
+      uses: actions/download-artifact@v4
+      with:
+        merge-multiple: true      
     - name: prepare for packaging
       run: |
         mkdir artifact\addons\spout-gd
-        copy out/spout_gd.windows.template_release.dll artifact\addons\spout-gd
-        copy out/spout_gd.windows.template_debug.dll artifact\addons\spout-gd
-        copy Spout2/Binaries/x64/SpoutLibrary.dll artifact\addons\spout-gd
+        copy spout_gd.windows.template_release.dll artifact\addons\spout-gd
+        copy spout_gd.windows.template_debug.dll artifact\addons\spout-gd
+        copy SpoutLibrary.dll artifact\addons\spout-gd
         copy spout_gd.gdextension artifact\addons\spout-gd
     - name: save artifact
       uses: actions/upload-artifact@v3
@@ -50,6 +73,5 @@ jobs:
         path: artifact
     - name: push release
       uses: ncipollo/release-action@v1
-      if: ${{ github.ref == 'refs/heads/main' }}
       with:
         artifacts: spout-gd.zip
