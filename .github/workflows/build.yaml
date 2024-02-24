@@ -22,7 +22,7 @@ jobs:
             platform: windows
             arch: x86_64
     env:
-      SCONS_CACHE: ${{ github.workspace }}/scons_cache/${{ matrix.identifier }}
+      SCONS_CACHE: ${{ github.workspace }}/.scons_cache
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -32,15 +32,24 @@ jobs:
       id: caches
       shell: bash
       run: |
-        echo "cache_key=$(git rev-parse HEAD:Spout2):$(git rev-parse HEAD:godot-cpp)" >> $GITHUB_OUTPUT
+        echo "spout_version=$(git rev-parse HEAD:Spout2)"
     - name: Cache Dependency Builds
+      id: spout_cache
+      uses: actions/cache@v4
+      with:
+        key: "spout-${{ steps.caches.outputs.spout_version }}"
+        path: |
+          ${{ github.workspace }}/Spout2
+    - name: Cache Scons Builds
       id: cache
       uses: actions/cache@v4
       with:
-        key: ${{ steps.caches.outputs.cache_key }}
-        path: |
-          ${{ github.workspace }}/Spout2
-          ${{ env.SCONS_CACHE }}
+        key: ${{ matrix.identifier }}-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+            ${{ matrix.identifier }}-${{ github.ref }}-${{ github.sha }}
+            ${{ matrix.identifier }}-${{ github.ref }}
+            ${{ matrix.identifier }}
+        path: ${{ env.SCONS_CACHE }}
     - name: Install cmake
       uses: lukka/get-cmake@fix-issue-123
     - name: Install Python
@@ -50,13 +59,13 @@ jobs:
     - name: Install scons
       run: pip install scons
     - name: Build Spout Library
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: steps.spout_cache.outputs.cache-hit != 'true'
       working-directory: Spout2
       run: |
         cmake -DSKIP_INSTALL_ALL=OFF -DSKIP_INSTALL_HEADERS=OFF -DSKIP_INSTALL_LIBRARIES=OFF -DSPOUT_BUILD_LIBRARY=ON --fresh .
         cmake --build . --clean-first
     - name: Build extension
-      run: scons target=${{ matrix.target }}
+      run: scons target='${{ matrix.target }}' platform='${{ matrix.platform }}' arch='${{ matrix.arch }}' -j2
     - name: save artifact
       uses: actions/upload-artifact@v4
       with:
